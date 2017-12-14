@@ -30,8 +30,6 @@ LECTURE 5
 
 
 '''
-
-
 import collections
 class Matrix(collections.MutableSequence):
 	# initialize matrix
@@ -119,26 +117,38 @@ class Matrix(collections.MutableSequence):
 	def _copy(self):	       # returns a copy of the matrix
 		new_matrix = Matrix([])
 		for row in range(self.height):
-			new_matrix.append(self[row])
+			r = []
+			for col in range(self.width):
+				r.append(self[row][col])
+			new_matrix.append(r)
 		new_matrix.height = self.height
 		new_matrix.width = self.width
 		return new_matrix
 
-	# ------- LECTURE 2: ELIMINATION WITH MATRICES ----------
-	def upper_triangle(self):		# upper triangle
+	def zeros(self):
+		'''
+		returns a zero matriz the same shape as the self matrix
+		'''
+		zero = self._copy()
+		for row in range(self.height):
+			for col in range(self.width):
+				zero[row][col] = 0
+		return zero
+	# ------- LECTURE 1: THE GEOMETRY OF LINEAR SPACES ------------------------
+	# ------- LECTURE 2: ELIMINATION WITH MATRICES ----------------------------
+	def row_echelon(self):		# upper triangle
 		'''
 		Finds the uppertriangular matrix
 		and saves it as self.ut
 		'''
-
-		multipliers = []								# to change the rows
-		self.ut = self._copy()							# start with the original matrix
-		for x in range(0, self.width-1):				# alter cols 1 to penult
-			for y in range(x+1, self.height):			# alter rows x+1 to the bottom
-				multiplier = self._list[y][x]/self._list[x][x]  # divide the 1st in yth row
-														# by the 1st in the 1st row
-				self.ut = self._row_op(y, x, multiplier)	# row opp
-		return self.ut
+		ut = self._copy()
+		size = min(self.height, self.width)
+		for col in range(0, size):
+			ut, pivot = ut._get_pivot(col)
+			for row in range(col+1, self.height):
+				multiplier = ut[row][col]/pivot
+				ut = ut._row_op(row, col, multiplier)
+		return ut
 
 	def back_substitution(self):
 		'''
@@ -151,7 +161,7 @@ class Matrix(collections.MutableSequence):
 		if self.width-self.height != 1: return False
 
 		variables = []
-		solved = self.upper_triangle()._copy()
+		solved = self.row_echelon()._copy()
 		for rowA in range(self.height-1,-1,-1):		# start from bottom, work to top
 			''' STEP 1: FIND THE VARIABLE '''
 			variable = solved[rowA][-1]/solved[rowA][rowA]
@@ -165,7 +175,7 @@ class Matrix(collections.MutableSequence):
 					solved[rowB][col] += solved[rowA][col]*multiplier
 		return variables, solved
 
-	# -------- LECTURE 3: MULTIPLICATION AND INVERSE MATRICS -------------
+	# -------- LECTURE 3: MULTIPLICATION AND INVERSE MATRICS ------------------
 	def multiply(self, b):
 		'''
 		finds the product of two matrices
@@ -203,18 +213,17 @@ class Matrix(collections.MutableSequence):
 		augmented.height = len(augmented)
 		return augmented
 
-	def _get_pivot(self, col):
+	def _get_pivot(self, row):
 		'''
 		for now returns the pivot
 		in the future will swap rows if necessary
 		'''
-		# for row in range(pivot+1, self.height):
-		# 	if self._list[row][pivot] != 0:
-		# 		self.swaprows(yy, pivot)
-		# 		return self
-		# 	else:
-		# 		return False
-		return self._list[col][col]
+		col = row
+		for r in range(row, self.height):
+			if self[r][col] != 0:
+				self = self._swap_rows(row,r)
+				return self, self[row][col]
+		return False
 
 	def _row_op(self, rowA, rowB, mult):
 		'''
@@ -252,14 +261,15 @@ class Matrix(collections.MutableSequence):
 		rowA and rowB  INT    rows to swap
 		mult           FLOAT  what to divide by
 
+		modifies in place
 		'''
-
-		swaprows = Matrix([])
-		swaprows[rowA] = self[rowB]
-		swaprows[rowB] = self[rowA]
-		swaprows.height = self.height
-		swaprows.width = self.width
-		return swaprows
+		temp = self._copy()._list
+		temp[rowB] = self[rowA]
+		temp[rowA] = self[rowB]
+		# temp.height = self.height
+		# temp.width = self.width
+		self = Matrix(temp)
+		return self
 
 	def inverse(self):
 		'''
@@ -274,7 +284,7 @@ class Matrix(collections.MutableSequence):
 
 		# go through making each pivot 1 and clearing rows below
 		for col in range(0, self.height):
-			pivot = augmented._get_pivot(col)
+			augmented, pivot = augmented._get_pivot(col)
 			augmented = augmented._divide(col, pivot)
 
 			# make spots below it 0
@@ -284,7 +294,7 @@ class Matrix(collections.MutableSequence):
 		# go back through clearing rows above
 		for col in range(self.height-1, 0, -1):	        # work left to right
 			for row in range(col-1, -1, -1):		    # work bottom to top
-				augmented._row_op(row, col, augmented[row][col])
+				augmented = augmented._row_op(row, col, augmented[row][col])
 
 		# cut off identity
 		inverse_matrix = Matrix([])
@@ -310,10 +320,32 @@ class Matrix(collections.MutableSequence):
 			i.append([0]*size)
 			i[a][a] = 1
 		return Matrix(i)
+# -------- LECTURE 4: FACTORIZATION INTO A=LU --------------------
+	def factor(self):
+		'''
+		INPUT
+		square matrix
 
-# -------- LECTURE 5: TRANSPOSES, PERMUTATIONS, SPACES R^n -----------
+		OUTPUT
+		L, D, U
+		'''
+
+		U = self.row_echelon()
+		D = self.zeros()
+		L = self.multiply(U.inverse())
+		for row in range(self.height):
+			pivot = U[row][row]
+			D[row][row] = pivot
+			U = U._divide(row, pivot)
+		return L, D, U
+
+# -------- LECTURE 5: TRANSPOSES, PERMUTATIONS, SPACES R^n --------------------
 	def transpose(self):
 		return Matrix([[self[y][x] for y in range(0, self.height)] for x in range(0, self.width)])
 
 	def symmetric(self):
 		return self == self.transpose()
+
+# -------- LECTURE 6: COLUMN SPACES AND NULL SPACES ---------------------------
+
+# -------- LECTURE 7: SOLVING AX=0, PIVOT VARIABLES, SPECIAL SOLUTIONS --------
