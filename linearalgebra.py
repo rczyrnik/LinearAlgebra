@@ -1,37 +1,10 @@
 '''
 Designed for the MIT OpenCourse Linear Algebra Class
-
-INDEX:
-LECTURE 1
-	A.legit()		checks if it is a list of lists and is rectangular
-	A.f()			converts the values in a to floating points
-					(important for comparing values)
-	A.square()		is A a square matrix?
-	A.display()		displays the matrix in the terminal
-	A.det()			calculates the determinant of A
-
-LECTURE 2
-	A.uppertriangle()	converts A into upper triangular form
-						can't yet do row exchanges
-	A.backsubsitiution()	does back subsitution
-							for a matrix in upper triangular form
-	A.solvesystem()		solves a system
-						prints the results and returns the variables as a list
-
-LECTURE 3
-	A._listultiply(B)		Multiplies AB (or returns false if not possible)
-	A.augmented()		adds the appropriate identity matrix to the right of A
-	A.inverse()			finds the inverse (and shows steps for debugging)
-	(bunch of fns neede for finding the inverse)
-
-LECTURE 5
-	A.transpose()		returns the transpose of A
-	A.symmetric()		checks if A is symmetric (having issues)
-
-
 '''
+
 import collections
 class Matrix(collections.MutableSequence):
+# -------- INITIALIZE ---------------------------------------------------------
 	# initialize matrix
 	def __init__(self,lst=[]):
 		self._list = lst
@@ -125,7 +98,7 @@ class Matrix(collections.MutableSequence):
 		new_matrix.width = self.width
 		return new_matrix
 
-	def zeros(self):
+	def zeros(self):		   # returns a zero matrix the size of self
 		'''
 		returns a zero matriz the same shape as the self matrix
 		'''
@@ -134,8 +107,10 @@ class Matrix(collections.MutableSequence):
 			for col in range(self.width):
 				zero[row][col] = 0
 		return zero
-	# ------- LECTURE 1: THE GEOMETRY OF LINEAR SPACES ------------------------
-	# ------- LECTURE 2: ELIMINATION WITH MATRICES ----------------------------
+
+# ------- LECTURE 1: THE GEOMETRY OF LINEAR SPACES ------------------------
+
+# ------- LECTURE 2: ELIMINATION WITH MATRICES ----------------------------
 	def row_echelon(self):		# upper triangle
 		'''
 		Finds the uppertriangular matrix
@@ -175,7 +150,7 @@ class Matrix(collections.MutableSequence):
 					solved[rowB][col] += solved[rowA][col]*multiplier
 		return variables, solved
 
-	# -------- LECTURE 3: MULTIPLICATION AND INVERSE MATRICS ------------------
+# -------- LECTURE 3: MULTIPLICATION AND INVERSE MATRICS ------------------
 	def multiply(self, b):
 		'''
 		finds the product of two matrices
@@ -320,6 +295,7 @@ class Matrix(collections.MutableSequence):
 			i.append([0]*size)
 			i[a][a] = 1
 		return Matrix(i)
+
 # -------- LECTURE 4: FACTORIZATION INTO A=LU --------------------
 	def factor(self):
 		'''
@@ -347,5 +323,8 @@ class Matrix(collections.MutableSequence):
 		return self == self.transpose()
 
 # -------- LECTURE 6: COLUMN SPACES AND NULL SPACES ---------------------------
+
+	def rank(self):			# rank of matrix, might not be lecture 6
+
 
 # -------- LECTURE 7: SOLVING AX=0, PIVOT VARIABLES, SPECIAL SOLUTIONS --------
